@@ -59,7 +59,9 @@ class CmdProxy(threading.Thread):
         detector_addr = (self.detector_ip, self.detector_cmd_port)
         self.detector_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
+            self.detector_socket.settimeout(10)
             self.detector_socket.connect(detector_addr)
+            self.detector_socket.settimeout(None)
             print "connect successful"
         except socket.error, msg:
             sys.stderr.write("[ERROR] %s\n" % msg[1])
@@ -112,6 +114,7 @@ class ImgProxy(threading.Thread):
         self.detector_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096*8192)
         #self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
+
         bufsize = self.detector_socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF);
         print "recv buf size is %d \n" % bufsize
         try:
