@@ -24,12 +24,14 @@ class MyCmdBaseRequestHandlerr(StreamRequestHandler):
                     self.server.detector_socket.send(data)
                     response = self.server.detector_socket.recv(128)
                     self.wfile.write(response)
+                elif len(data) == 0:
+                    break;
+
                 if server.stopped:
                     break;
             except:
                 self.server.detector_socket.close()
                 #traceback.print_exc()
-                exit()
                 break
 
 class CmdTCPServer(ThreadingTCPServer):
@@ -64,7 +66,7 @@ class CmdProxy(threading.Thread):
             exit()
     
     def run(self):
-        service_addr = ('127.0.0.1', self.service_port)
+        service_addr = ('', self.service_port)
    
         #start service
         server = CmdTCPServer(service_addr, MyCmdStreamRequestHandlerr, self.detector_socket)
@@ -74,12 +76,12 @@ class CmdProxy(threading.Thread):
             server.force_stop()
 
 #current implement tation for image channel just support one client
-class MyImgStreamRequestHandlerr(StreamRequestHandler):
+class MyImgBaseRequestHandlerr(StreamRequestHandler):
     def handle(self):
         while True:
             try:
                 data = self.server.detector_socket.recv(1024)
-                self.wfile.write(data)
+                self.request.send(data)
                 if server.stopped:
                     break;
             except:
@@ -108,6 +110,10 @@ class ImgProxy(threading.Thread):
     def connect(self):
         detector_addr = (self.detector_ip, self.detector_img_port)
         self.detector_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096*8192)
+        #self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
+        bufsize = self.detector_socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF);
+        print "recv buf size is %d \n" % bufsize
         try:
             self.detector_socket.connect(detector_addr)
             print "connect successful"
@@ -115,7 +121,7 @@ class ImgProxy(threading.Thread):
             sys.stderr.write("[ERROR] %s\n" % msg[1])
             exit()
     def run(self):
-        service_addr = ('127.0.0.1', self.service_port)
+        service_addr = ('', self.service_port)
    
         #start service
         server = ImgTCPServer(service_addr, MyImgStreamRequestHandlerr, self.detector_socket)
