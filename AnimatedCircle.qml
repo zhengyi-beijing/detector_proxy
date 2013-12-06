@@ -5,17 +5,21 @@ Rectangle {
     color:"blue"
     width: 400
     height: 400
+    property alias running: rotation.running
     Image {
+        id: animation
         anchors.centerIn: parent
-        width:400   
-        height:400
+        width:300   
+        height:300
         
-        source: "waitNote.png"
+        source: "res\\X-ray.svg"
         NumberAnimation on rotation {
-            loops: Animation.Infinite
+            id : rotation
+            loops:  Animation.Infinite
             from: 0
             to: 360
-            duration: 1500 // Define the desired rotation speed.
+            duration: 3000 // Define the desired rotation speed.
+            running:true
         }
     }
 }

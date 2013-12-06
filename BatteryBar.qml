@@ -4,9 +4,10 @@ Rectangle {
     height:400
     width:50
     color:"transparent"
+    
     Rectangle {
         id: fullbattery
-        height:400
+        height:300
         width:40
         anchors.centerIn:parent
         border.width:2
@@ -16,12 +17,12 @@ Rectangle {
             spacing:1
             Repeater {
 
-                model: 15
+                model: 5
                 id: battery
                 
                 Rectangle {
                     width: fullbattery.width
-                    height:fullbattery.height/20
+                    height:fullbattery.height/5
                     color:"green"
                     
                 }

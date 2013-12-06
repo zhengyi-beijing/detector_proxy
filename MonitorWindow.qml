@@ -2,14 +2,15 @@
 import QtQuick 1.0
 Rectangle {
     id: window
-    width: 1024
-    height: 768
+    width: 800
+    height: 600
     //anchors.fill: parent
-    color: "green"
+    color: "lightblue"
+    /*
     gradient: Gradient {
-         GradientStop { position: 0.0; color: "greenyellow" }
-         GradientStop { position: 1.0; color: "green" }
-        }
+         GradientStop { position: 0.0; color: "lightblue" }
+         GradientStop { position: 1.0; color: "blue" }
+        }*/
     function set_scanner_battery_level (level){
         
     }
@@ -41,63 +42,139 @@ Rectangle {
             height: parent.height/6
             width : parent.width
             color:"transparent"
-            Text {
-                //anchors.centerIn: parent
+            
+            Image {
+                anchors.fill:parent
+                anchors.margins : 20
                 anchors.horizontalCenter : title_area.horizontalCenter
                 anchors.baseline : title_area.verticalCenter
-                height : parent.height
-                text: "Appons"
-                font.family: "Helvetica"
-                color: "white"
-                font.pointSize: 48
-                style: Text.Outline
+
+                id: appons
+                source:"res\\Appons-With_R1.png"
             }
         }
         Row {
                 width: window.width
-                height:window.height - title_area.height-info_area.height
-            
-                BatteryBar {
-                    id:battery1
-                    width:parent.width/5
+                height:window.height - title_area.height
+                
+                Column {
+                    id: side_info
+                    width:160
                     height:parent.height
-                }
-                AnimatedCircle {
-                    id: runing_status
-                    color:"transparent"
-                    //height:window.height - title_area.height
-                    height:parent.height
-                    width:parent.width-2*battery1.width
+                    Rectangle {
+                        height: parent.height //- test.height
+                        width:parent.width
+                        color: "transparent"
+                    }
+                    /*
+                    Button {
+                        id:test
+                        height: 100
+                        width:parent.width
+                        text:"Test"
+                        onClicked: {runing_status.running = !runing_status.running }
+                    }*/
                 }
                 
-                BatteryBar {
-                    id:battery2
-                    width:parent.width/5
-                    height:parent.height 
+                Item {
+                    width:100
+                    height:parent.height
+                    //color:"yellow"
+                    BatteryBar {
+                        id: xray_battery
+                        width:parent.width
+                        height:300
+                        anchors.horizontalCenter : parent.horizontalCenter
+                        y:parent.y+50
+                    }
+                    
+                    Image { 
+                        id: xray_connection
+                        height :80
+                        width : 80
+                        fillMode: Image.PreserveAspectFit
+                        source: "res\\CONNECTED.png"
+                        anchors.horizontalCenter : parent.horizontalCenter
+                        anchors.bottom:parent.bottom
+                    }
                 }
-        }
-        
-        Rectangle {
-            id: info_area
-            height: parent.height/8
-            width : parent.width
-            color:"transparent"
-            Flow {
-                anchors.fill: parent
-                anchors.margins:4
-                Button {
+                
+                Column {
+                    width: parent.width-2*xray_battery.width-2*side_info.width
                     height: parent.height
-                    width:200
-                    text:"Test"
-                    onClicked: {runing_status.running = !runing_status.running }
+                    AnimatedCircle {
+                        id: runing_status
+                        color:"transparent"
+                        //height:window.height - title_area.height
+                        height: parent.height - log.height
+                        width: parent.width
+                    }
+                    
+                    Text {
+                        id: log
+                        height: 40
+                        width: parent.width
+                        text: "Waiting"
+                        font.pointSize:24
+                    }
                 }
-                Text { text: "Detector"; font.pixelSize: 40 }
-                Text { id:detector_status ;text: "Waiting"; font.pixelSize: 40 }
-                Text { text: "Client"; font.pixelSize: 40 }
-                Text { id: client_status; text: "Waiting"; font.pixelSize: 40 }
-                Text { text: "bandwidth"; font.pixelSize: 40 }
-                Text { id :bandwidth; text: "0"; font.pixelSize: 40 }
-            }
+                
+                Item {
+                    width:100
+                    height:parent.height
+                    //color:"red"
+                    BatteryBar {
+                        id: detector_battery
+                        width:parent.width
+                        height:300
+                        anchors.horizontalCenter : parent.horizontalCenter
+                    
+                        y:parent.y+50
+                    }
+                    
+                    Image { 
+                        id: detector_connection
+                        height :80
+                        width : 80
+                        fillMode: Image.PreserveAspectFit
+                        source: "res\\CONNECTED.png"
+                        anchors.horizontalCenter : parent.horizontalCenter
+                        anchors.bottom:parent.bottom
+                    }
+                }
+                
+                Item {
+                    width:side_info.width
+                    height:parent.height
+                    //color:"transparent"
+                    Row {
+                        id: status_system
+                        anchors.bottom:parent.bottom
+                        width:parent.width
+                        
+                        height:80
+                        Image { 
+                            id: stopped
+                            height : 80
+                            width : 80
+                            fillMode: Image.PreserveAspectFit
+                            source: "res\\ES-EN.png"
+                            //source: "res\\CONNECTED.png"
+                            //anchors.bottom: parent.bottom
+                            //anchors.left: parent.anchors.left
+                        }
+
+                        Image { 
+                            id: speaker
+                            height : 80
+                            width : 80
+                            fillMode: Image.PreserveAspectFit
+                            source: "res\\PCS-DI.png"
+                            //anchors.bottom: parent.bottom
+                            //anchors.left: stopped.anchors.right
+                        }
+                    }
+                }
         }
     }
 }

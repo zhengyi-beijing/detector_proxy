@@ -3,10 +3,13 @@ from PyQt4.QtDeclarative import QDeclarativeView
 from PyQt4 import QtGui,  QtCore
 import sys
 import detector_proxy,  serial_proxy
-#class DetectorWindow (QtGui.QMainWindow):
-class DetectorWindow (QDeclarativeView):
+from proxy_monitor import ProxyMonitor 
+
+
+        
+class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     def __init__ (self,  parent = None):
-        super(DetectorWindow,  self).__init__(parent)
+        super(MonitorWindow,  self).__init__(parent)
         self.setWindowFlags (QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowSystemMenuHint)
         self.setStyleSheet ('''background-color:cyan;''')
         
@@ -27,19 +30,38 @@ class DetectorWindow (QDeclarativeView):
         else:
             event.ignore()
             
+    def set_xray_battery_level(self,  level):
+        self.rootObject.set_xray_battery_level (level)
+        
+    def set_scanner_battery_level(self,  level):
+        self.rootObject.set_scanner_battery_level (level)
+        
+    def set_detector_running (self,  running):
+        self.rootObject.set_detector_running(running)
+            
+    def  set_detector_connected(self,  connected):
+        self.rootObject.set_detector_connected(connected)
+    
+    def set_client_connected(self,  connected): 
+        self.rootObject.set_client_connected (connected)
+    
+    def set_trace_info(msg) :
+        print "msg: "+ msg
+    
 if __name__ == "__main__":
-    detector_proxy.start_proxy()
-    serial_proxy.start_proxy()
+
     print "ui start"
     app = QtGui.QApplication([])
 
-    view = DetectorWindow()
+    view = MonitorWindow()
+    #detector_proxy.start_proxy(view)
+    serial_proxy.start_proxy()
 
-
-    view.setSource(QtCore.QUrl("demo.qml"))
+    view.setSource(QtCore.QUrl("MonitorWindow.qml"))
     view.setResizeMode(QDeclarativeView.SizeRootObjectToView) 
 
     view.show()
+    
     
     
     #view.showMaximized()

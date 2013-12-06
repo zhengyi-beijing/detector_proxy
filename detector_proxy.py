@@ -8,18 +8,23 @@ from Queue import Queue
 import random
 import threading
 import time
-import sys getopt
-
+import sys,  getopt
+from proxy_monitor import ProxyMonitor 
 #
+g_StatusMonitor = ProxyMonitor()
+
 class MyCmdBaseRequestHandlerr(StreamRequestHandler):
     def handle(self):
+        g_StatusMonitor.set_client_connected(True)
         while True:
             try:
-                data = self.request.recv(128).strip 
+                data = self.request.recv(128)
                 print "receive from (%r):%r" % (self.client_address, data)
                 if len(data) > 0 :
-                    if cmp(data, '[close]') == 0 :
-                        server.stopped = True; 
+                    if data.contains("[SF,1]")  :
+                        g_StatusMonitor.set_detector_running(True);
+                    elif data.contains("[SF,0]"):
+                        g_StatusMonitor.set_detector_running(False);
                         break;
                     self.server.detector_socket.send(data)
                     response = self.server.detector_socket.recv(128)
@@ -33,6 +38,7 @@ class MyCmdBaseRequestHandlerr(StreamRequestHandler):
                 self.server.detector_socket.close()
                 #traceback.print_exc()
                 break
+            g_StatusMonitor.set_client_connected(False)
 
 class CmdTCPServer(ThreadingTCPServer):
     def __init__(self, service_addr, handler, detector_socket):
@@ -63,15 +69,17 @@ class CmdProxy(threading.Thread):
             self.detector_socket.connect(detector_addr)
             self.detector_socket.settimeout(None)
             print "connect successful"
+            g_StatusMonitor.set_detector_connected(True)
         except socket.error, msg:
             sys.stderr.write("[ERROR] %s\n" % msg[1])
-            exit()
+            #exit()
+            g_StatusMonitor.set_detector_connected(False)
     
     def run(self):
         service_addr = ('', self.service_port)
    
         #start service
-        server = CmdTCPServer(service_addr, MyCmdStreamRequestHandlerr, self.detector_socket)
+        server = CmdTCPServer(service_addr, MyCmdBaseRequestHandlerr, self.detector_socket)
         try:
             server.serve_forever()
         except KeyboardInterrupt:
@@ -94,6 +102,7 @@ class ImgTCPServer(ThreadingTCPServer):
     def __init__(self, service_addr, handler, detector_socket):
         ThreadingTCPServer.__init__(self, service_addr, handler)
         self.detector_socket = detector_socket
+        self.stopped = False
     def serve_forever(self):
         while not self.stopped:
             self.handle_request()
@@ -122,12 +131,13 @@ class ImgProxy(threading.Thread):
             print "connect successful"
         except socket.error, msg:
             sys.stderr.write("[ERROR] %s\n" % msg[1])
-            exit()
+            g_StatusMonitor.set_detector_connected(False)
+            #exit()
     def run(self):
         service_addr = ('', self.service_port)
    
         #start service
-        server = ImgTCPServer(service_addr, MyImgStreamRequestHandlerr, self.detector_socket)
+        server = ImgTCPServer(service_addr, MyImgBaseRequestHandlerr, self.detector_socket)
         try:
             server.serve_forever()
         except KeyboardInterrupt:
@@ -136,7 +146,7 @@ class ImgProxy(threading.Thread):
             
 
 #Main thread
-def usage ()
+def usage ():
     print "detector_proxy.py usage "
     print "-h print help message"
     print "-d detector ip address"
@@ -152,13 +162,14 @@ def usage ()
 #            fprintf(stderr, "Error setting socket opts: %s\n", strerror(errno));
  #   }
 
-def main():
+def start_proxy(monitor):
 
     opt, args = getopt.getopt(sys.argv[1:], "hd:c:i:")
-    detector_ip = ""
-    cmd_port = 9000;
-    img_port = 8888;
-    for op,value in opts
+    detector_ip = "192.168.1.2"
+    cmd_port = 3000;
+    img_port = 4001;
+    print 'Start proxy!'
+    for op,value in opt:
         if op == "-h":
             usage()
             sys.exit(1)
@@ -170,7 +181,7 @@ def main():
             except ValueError:
                 print "cmd_port should be an integer, set to default value"
                 cmd_port = 9000;
-        if op == "-i"
+        if op == "-i":
             try:
                 img_port = int(value)
             except ValueError:
@@ -184,7 +195,7 @@ def main():
     cmd_proxy.start()
 
     #img_proxy = ImgProxy("10.211.55.4", 8888, 8888)
-    img_proxy = ImgProxy(detctor_ip, img_port, img_port)
+    img_proxy = ImgProxy(detector_ip, img_port, img_port)
     img_proxy.setDaemon(True)
     img_proxy.connect()
     img_proxy.start()
@@ -204,13 +215,13 @@ def main():
     #        interruptEvent.set()
             
 
-    cmd_proxy.join()
-    img_proxy.join()
+    #cmd_proxy.join()
+    #img_proxy.join()
 
-    print 'All threads terminate!'
+    print 'All threads started!'
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
 
-    main()
+#    main()
 
 
