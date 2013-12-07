@@ -19,20 +19,46 @@ Rectangle {
     }
     
     function set_detector_running (running) {
-    
+            runing_status.running = running
     }
     
     function set_detector_connected(connected) {
+        if (connected) {
+            detector_connection.source = "res\\CONNECTED.png"
+        } else {
+            detector_connection.source = "res\\UNCONNECTED.png"
+        }
     }
     
-    function set_client_connected(connected) {
+    function set_xray_connected(connected) {
+        if (connected) {
+            xray_connection.source = "res\\CONNECTED.png"
+        } else {
+            xray_connection.source = "res\\UNCONNECTED.png"
+        }
     }
     
+    function set_speaker_status (on) {
+        if(on) {
+            speaker.source = "res\\PCS-EN.png"
+        } else {
+            speaker.source = "res\\PCS-DI.png"
+        }
+    }
+
+    function set_stop_status (stopped) {
+        if (stopped) {
+            stopped.source = "res\\ES-EN.png"
+        } else {
+            stopped.source = "res\\ES-LK.png"
+        }
+    }
+
     function set_trace_info(msg) {
+        log.text = msg
     }
     
-    function set_bandwidth() {
-    }
+
     
     Column {
         spacing: 2
