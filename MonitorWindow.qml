@@ -62,7 +62,8 @@ Rectangle {
     
     Column {
         spacing: 2
-        anchors.fill: parent
+        //anchors.fill: parent
+        height:parent.height
         Rectangle {
             id: title_area
             height: parent.height/6
@@ -73,7 +74,7 @@ Rectangle {
                 anchors.fill:parent
                 anchors.margins : 20
                 anchors.horizontalCenter : title_area.horizontalCenter
-                anchors.baseline : title_area.verticalCenter
+                //anchors.baseline : title_area.verticalCenter
 
                 id: appons
                 source:"res\\Appons-With_R1.png"
@@ -81,37 +82,19 @@ Rectangle {
         }
         Row {
                 width: window.width
-                height:window.height - title_area.height
-                
-                Column {
-                    id: side_info
-                    width:160
-                    height:parent.height
-                    Rectangle {
-                        height: parent.height //- test.height
-                        width:parent.width
-                        color: "transparent"
-                    }
-                    /*
-                    Button {
-                        id:test
-                        height: 100
-                        width:parent.width
-                        text:"Test"
-                        onClicked: {runing_status.running = !runing_status.running }
-                    }*/
-                }
-                
+                height:window.height - title_area.height-status_system.height
+                //color:"green"
                 Item {
-                    width:100
+                    width:200
                     height:parent.height
+                    id:battery_xray_info
                     //color:"yellow"
                     BatteryBar {
                         id: xray_battery
                         width:parent.width
                         height:300
                         anchors.horizontalCenter : parent.horizontalCenter
-                        y:parent.y+50
+
                     }
                     
                     Image { 
@@ -122,11 +105,12 @@ Rectangle {
                         source: "res\\CONNECTED.png"
                         anchors.horizontalCenter : parent.horizontalCenter
                         anchors.bottom:parent.bottom
+
                     }
                 }
                 
-                Column {
-                    width: parent.width-2*xray_battery.width-2*side_info.width
+                Item {
+                    width: parent.width-battery_xray_info.width-battery_detector_info.width
                     height: parent.height
                     AnimatedCircle {
                         id: runing_status
@@ -136,71 +120,72 @@ Rectangle {
                         width: parent.width
                     }
                     
-                    Text {
-                        id: log
-                        height: 40
-                        width: parent.width
-                        text: "Waiting"
-                        font.pointSize:24
-                    }
+
                 }
                 
                 Item {
-                    width:100
+                    width:battery_xray_info.width
                     height:parent.height
+                    id: battery_detector_info
                     //color:"red"
                     BatteryBar {
                         id: detector_battery
                         width:parent.width
                         height:300
                         anchors.horizontalCenter : parent.horizontalCenter
-                    
-                        y:parent.y+50
                     }
                     
                     Image { 
                         id: detector_connection
                         height :80
-                        width : 80
+                        width : parent.width
                         fillMode: Image.PreserveAspectFit
                         source: "res\\CONNECTED.png"
                         anchors.horizontalCenter : parent.horizontalCenter
                         anchors.bottom:parent.bottom
                     }
                 }
-                
-                Item {
-                    width:side_info.width
-                    height:parent.height
-                    //color:"transparent"
-                    Row {
-                        id: status_system
-                        anchors.bottom:parent.bottom
-                        width:parent.width
-                        
-                        height:80
-                        Image { 
-                            id: stopped
-                            height : 80
-                            width : 80
-                            fillMode: Image.PreserveAspectFit
-                            source: "res\\ES-EN.png"
-                            //source: "res\\CONNECTED.png"
-                            //anchors.bottom: parent.bottom
-                            //anchors.left: parent.anchors.left
-                        }
+             }
 
-                        Image { 
-                            id: speaker
-                            height : 80
-                            width : 80
-                            fillMode: Image.PreserveAspectFit
-                            source: "res\\PCS-DI.png"
-                            //anchors.bottom: parent.bottom
-                            //anchors.left: stopped.anchors.right
-                        }
-                    }
+        Item {
+                id: status_system
+        //        anchors.bottom:parent.bottom
+                width:parent.width
+                height:80
+               // color:"red"
+
+                Text {
+                    id: log
+                    height: parent.height
+                    width: parent.width-stopped.width-speaker.width
+                    text: "Waiting"
+                    font.pointSize:24
+                    anchors.left: parent.left
+                    anchors.margins: 10
                 }
-        }
+
+                Image {
+                    id: stopped
+                    height : parent.height
+                    width : height
+                    fillMode: Image.PreserveAspectFit
+                    source: "res\\ES-EN.png"
+                    //source: "res\\CONNECTED.png"
+                    //anchors.bottom: parent.bottom
+                    anchors.right: speaker.left
+                }
+
+                Image {
+                    id: speaker
+                    height : parent.height
+                    width : height
+                    fillMode: Image.PreserveAspectFit
+                    source: "res\\PCS-DI.png"
+                    //anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                }
+            }
+
+
     }
 }
