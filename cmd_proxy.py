@@ -13,6 +13,7 @@ import sys,  getopt
 
 class MyCmdBaseRequestHandlerr(StreamRequestHandler):
     def handle(self):
+        print "CmdProxy client connected\n"
         while True:
             try:
                 data = self.request.recv(128)
@@ -26,6 +27,7 @@ class MyCmdBaseRequestHandlerr(StreamRequestHandler):
                     try:
                         self.server.detector_socket.send(data)
                         response = self.server.detector_socket.recv(128)
+                        print "response is " + response
                         self.wfile.write(response)
                     except socket.timeout:
                         print "CmdProxy:: detector socket timeout"
