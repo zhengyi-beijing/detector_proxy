@@ -3,7 +3,7 @@ from PyQt4.QtDeclarative import QDeclarativeView
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys
-import detector_proxy,  serial_proxy
+import cmd_proxy,  serial_proxy, img_proxy
 from proxy_monitor import ProxyMonitor 
 import threading
 """
@@ -66,7 +66,7 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     signalXrayBatteryLevel = pyqtSignal(int)
     signalXrayConnection = pyqtSignal(bool)
     signalDetectorBatteryLevel = pyqtSignal(int)
-    signalDetectorConnection = pyqtSignal(bool)
+    signalDetectorConnected = pyqtSignal(bool)
     signalSpeakerStatus = pyqtSignal(bool)
     signalStopStatus = pyqtSignal(bool)
     signalTraceInfo = pyqtSignal(str)
@@ -111,6 +111,8 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     def connectSignalSlot(self):
 
         self.signalRunning.connect(self.slot_running_signal, Qt.QueuedConnection)
+        self.signalDetectorConnected.connect(self.slot_detector_connected, Qt.QueuedConnection)
+        self.signalTraceInfo.connect (self.slot_trace_info, Qt.QueuedConnection)
         #testThread.signalRunning.connect(self.slot_running_signal,Qt.QueuedConnection)
 
     #@PyQt4.QtCore.pyqtSlot(int)
@@ -136,8 +138,10 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
 
     #@PyQt4.QtCore.pyqtSlot(bool)
     def slot_detector_connected (self, connected):
+        print "Slot detector connected is "+str(connected)
         self.rootObject().set_detector_connected(connected)
     def set_detector_connected(self,  connected):
+        print "Set detector connected is "+str(connected)
         self.signalDetectorConnected.emit(connected)
     
     #@PyQt4.QtCore.pyqtSlot(bool)
@@ -165,29 +169,31 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
         self.signalTraceInfo.emit(msg)
     
 if __name__ == "__main__":
+    detector_ip = "192.168.1.2"
+    cmd_port = 3000;
+    img_port = 4001;
     print "ui start"
     app = QApplication([])
-    threadPool = []
+    #threadPool = []
 
     view = MonitorWindow()
-    detector_proxy.start_proxy(view)
-    serial_proxy.start_proxy(view)
+
+    try:
+        view.setSource(QUrl("MonitorWindow.qml"))
+        view.setResizeMode(QDeclarativeView.SizeRootObjectToView)
+        view.show()
+
+        serialProxy = serial_proxy.start_proxy(view)
+        cmdProxy = cmd_proxy.start_proxy(detector_ip, cmd_port, cmd_port,view)
+        imgProxy = img_proxy.start_proxy(detector_ip, img_port, img_port,view)
+
+        #view.showFullScreen()
+        app.exec_()
+    except:
+        print "star proxy failed"
 
 
-    view.setSource(QUrl("MonitorWindow.qml"))
-    view.setResizeMode(QDeclarativeView.SizeRootObjectToView) 
-
-    view.show()
-    
-    testThread.setListener(view)
-    
-    #view.showMaximized()
-    #rootObj = view.rootObject()
-    #rootObj.setProperty("height",  view.height)
-    #rootObj.setProperty("width",  view.width)
-    #view.showFullScreen()
-    app.exec_()
-
-    serial_proxy.stop()
-    detector_proxy.stop()
+    serialProxy.stop()
+    cmdProxy.stop()
+    imgProxy.stop()
 

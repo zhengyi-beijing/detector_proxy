@@ -77,23 +77,23 @@ class CmdTCPServer(ThreadingTCPServer):
         self.server_close()
         self.stopped = True
 
-class CmdProxy(threading.Thread):
+class SerialProxy(threading.Thread):
     def __init__(self, service_port, listener):
         threading.Thread.__init__(self, name='CmdProxy')
         self.service_port = service_port
         self.listener = listener
         self.detector_serial = None
 
-    def connect(self):
+    def openSerial(self):
         try:
-            self.detector_serial  = serial.Serial(COM)
-            self.detector_serial.timeout = 2
+            self.serial  = serial.Serial(COM)
+            self.serial.timeout = 2
             #self.detector_serial  = serial.Serial('/dev/tty.usbserial-FT20E5D5')
-            print self.detector_serial.portstr
+            print self.serial.portstr
             print "serial connect successful"
         except Exception, e:
             print "error open serial port: " + str(e)
-    def stop():
+    def stop(self):
         self.server.force_stop()
 
     def run(self):
@@ -107,19 +107,19 @@ class CmdProxy(threading.Thread):
             print "error start CmdTCP server  " + str(e)
             self.server.shutdown()
         finally: 
-            if self.detector_serial is not None:
-                self.detector_serial.close()
+            if hasattr(self, 'serial') is not None:
+                self.serial.close()
 
 def start_proxy (listener = None):
      try:
-        cmd_proxy = CmdProxy(SerialServicePort, listener);
-        cmd_proxy.connect()
-        cmd_proxy.start()
+        proxy = SerialProxy(SerialServicePort, listener);
+        proxy.openSerial()
+        proxy.start()
+        return proxy
      except Exception, e:
         print "error start CmdTCP server  " + str(e)
+        proxy.stop
 
-def stop():
-    cmd_proxy.stop()
 
 #if __name__ == '__main__':
 
