@@ -13,17 +13,16 @@ import sys,  getopt
 
 class MyCmdBaseRequestHandlerr(StreamRequestHandler):
     def handle(self):
-        g_StatusMonitor.set_client_connected(True)
         while True:
             try:
                 data = self.request.recv(128)
                 print "receive from (%r):%r" % (self.client_address, data)
                 if len(data) > 0 :
-                    if data.contains("[SF,1]")  :
+                    '''if data.contains("[SF,1]")  :
                         self.server.listener.set_detector_running(True);
                     elif data.contains("[SF,0]"):
                         self.server.listener.set_detector_running(False);
-                        break;
+                        break;'''
                     try:
                         self.server.detector_socket.send(data)
                         response = self.server.detector_socket.recv(128)
@@ -40,15 +39,15 @@ class MyCmdBaseRequestHandlerr(StreamRequestHandler):
                     self.server.listener.set_trace_info(log)
                     break;
 
-                if server.stopped:
+                if self.server.stopped:
                     print "CmfProxy:: server.stop flag set\n"
                     break;
             except:
                 self.server.detector_socket.close()
                 print "CmdProxy:: get exeception in socket handler, quit\n"
-                #traceback.print_exc()
+                traceback.print_exc()
                 break
-            self.server.listener.set_client_connected(False)
+            #self.server.listener.set_client_connected(False)
 
 class CmdTCPServer(ThreadingTCPServer):
     def __init__(self, service_addr, handler, detector_socket, listener):
@@ -88,15 +87,15 @@ class CmdProxy(threading.Thread):
             self.listener.set_detector_connected(False)
 
     def stop(self):
-        server.force_stop()
+        self.server.force_stop()
 
     def run(self):
         service_addr = ('', self.service_port)
 
         #start service
-        server = CmdTCPServer(service_addr, MyCmdBaseRequestHandlerr, self.detector_socket, self.listener)
+        self.server = CmdTCPServer(service_addr, MyCmdBaseRequestHandlerr, self.detector_socket, self.listener)
         #try:
-        server.serve_forever()
+        self.server.serve_forever()
         #except KeyboardInterrupt:
         #    server.force_stop()
 

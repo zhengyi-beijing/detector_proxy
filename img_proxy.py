@@ -69,8 +69,11 @@ class ImgProxy(threading.Thread):
         service_addr = ('', self.service_port)
 
         #start service
-        server = ImgTCPServer(service_addr, MyImgBaseRequestHandlerr, self.detector_socket, self.listener)
-        server.serve_forever()
+        self.server = ImgTCPServer(service_addr, MyImgBaseRequestHandlerr, self.detector_socket, self.listener)
+        self.server.serve_forever()
+
+    def stop(self):
+        self.server.force_stop()
 
 def start_proxy(detector_ip, detector_cmd_port, service_port,listener):
     try:

@@ -39,18 +39,23 @@ class MyCmdBaseRequestHandlerr(StreamRequestHandler):
                         self.server.listener.set_stop_status (False);
                     else:
                         print "goin to write\n"
-                        self.server.detector_serial.write(data)
-                        self.server.detector_serial.timeout=2
+                        self.server.serial.write(data)
+                        #time.sleep(1)
+                        self.server.serial.timeout=2
                         print "going to read"
                         #The max length of the return msg is 13 bytes
-                        response = self.server.detector_serial.read(13)
-
+                        #import pdb
+                        #pdb.set_trace()
+                        response = self.server.serial.read(1)
+                        n = self.server.serial.inWaiting()
+                        print "ther is %d bytes\n"%n
+                        response = response + self.server.serial.read(n)
+                        #import pdb
+                        #pdb.set_trace()
                         if len(response) > 0:
-                            int_list = [int(i) for i in response]
-                            hex_list = [hex(i) for i in int_list]
-                            print "return is " + hex_list
+
                             self.wfile.write(response)
-                            if response[0] == 0xaa:
+                            if response[0] == '\xaa':
                                 self.server.listener.set_trace_info ("ok")
                             else:
                                 self.server.listener.set_trace_info ("error")
@@ -65,7 +70,7 @@ class MyCmdBaseRequestHandlerr(StreamRequestHandler):
 class CmdTCPServer(ThreadingTCPServer):
     def __init__(self, service_addr, handler, serial, listener):
         ThreadingTCPServer.__init__(self, service_addr, handler)
-        self.detector_serial = serial
+        self.serial = serial
         self.stopped = False
         self.listener = listener
         
@@ -82,7 +87,7 @@ class SerialProxy(threading.Thread):
         threading.Thread.__init__(self, name='CmdProxy')
         self.service_port = service_port
         self.listener = listener
-        self.detector_serial = None
+        self.serial = None
 
     def openSerial(self):
         try:
@@ -100,7 +105,7 @@ class SerialProxy(threading.Thread):
         service_addr = ('', self.service_port)
         #start service
         try:
-            self.server = CmdTCPServer(service_addr, MyCmdBaseRequestHandlerr, self.detector_serial, self.listener)
+            self.server = CmdTCPServer(service_addr, MyCmdBaseRequestHandlerr, self.serial, self.listener)
             print "run tcp server"
             self.server.serve_forever()
         except Exception,  e:

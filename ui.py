@@ -163,13 +163,13 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
         self.signalStopStatus.emit(stopped)
 
     #PyQt4.QtCore.pyqtSlot(string)
-    def slot_trace_info(string):
-        self.rootObejct().set_trace_info (msg)
-    def set_trace_info(msg) :
+    def slot_trace_info(self, msg):
+        self.rootObject().set_trace_info (msg)
+    def set_trace_info(self, msg) :
         self.signalTraceInfo.emit(msg)
     
 if __name__ == "__main__":
-    detector_ip = "192.168.1.2"
+    detector_ip = "192.168.2.2"
     cmd_port = 3000;
     img_port = 4001;
     print "ui start"
