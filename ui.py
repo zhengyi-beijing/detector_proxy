@@ -6,6 +6,7 @@ import sys
 import cmd_proxy,  serial_proxy, img_proxy
 from proxy_monitor import ProxyMonitor 
 import threading
+import reg
 """
 class TestThread(threading.Thread,QObject):
     #Signal define
@@ -79,7 +80,7 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
 
         self.connectSignalSlot()
 
-
+        shortcut = QShortcut(QKeySequence("Ctrl+S"), self, None, self.hotkeypress)
         
     def showMaxsized (self):
         desktop = QtGui.QApplication.desktop()
@@ -91,21 +92,27 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     def keyPressEvent(self, event):
         if type(event) == QKeyEvent:
              #here accept the event and do something
+
             print event.key()
             if event.key() == Qt.Key_Escape:
 
                 self.close()
 
-            elif event.key() == Qt.Key_Right:
-                testThread.startSignal()
-            elif event.key() == Qt.Key_Left:
-                testThread.stopSignal()
+            elif event.key() == Qt.Key_R:
+                if(event.modifiers() & Qt.AltModifier):
+                    print "Get Alt+F1 Restore explore\n"
+                    reg.restoreShell()
+            elif event.key() == Qt.Key_S:
+                if(event.modifiers() & Qt.AltModifier):
+                    print "Get Alt+F2 Setup the shell appons\n"
+                    reg.setupShell()
                 #self.slot_running_signal ( False)
 
-            event.accept()
+            #event.accept()
         else:
             event.ignore()
-
+    def hotkeypress(self):
+        print "get hot key"
 
 
     def connectSignalSlot(self):
@@ -174,8 +181,6 @@ if __name__ == "__main__":
     img_port = 4001;
     print "ui start"
     app = QApplication([])
-    #threadPool = []
-
     view = MonitorWindow()
 
     try:
@@ -187,7 +192,7 @@ if __name__ == "__main__":
         cmdProxy = cmd_proxy.start_proxy(detector_ip, cmd_port, cmd_port,view)
         imgProxy = img_proxy.start_proxy(detector_ip, img_port, img_port,view)
 
-        #view.showFullScreen()
+        view.showFullScreen()
         app.exec_()
     except:
         print "star proxy failed"
