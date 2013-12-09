@@ -7,6 +7,8 @@ import threading
 import time
 import sys
 
+SerialServicePort=1234
+COM = "COM2"
 class MyCmdBaseRequestHandlerr(StreamRequestHandler):
     def handle(self):
         while True:
@@ -84,7 +86,7 @@ class CmdProxy(threading.Thread):
 
     def connect(self):
         try:
-            self.detector_serial  = serial.Serial("COM2")
+            self.detector_serial  = serial.Serial(COM)
             self.detector_serial.timeout = 2
             #self.detector_serial  = serial.Serial('/dev/tty.usbserial-FT20E5D5')
             print self.detector_serial.portstr
@@ -93,6 +95,7 @@ class CmdProxy(threading.Thread):
             print "error open serial port: " + str(e)
     def stop():
         self.server.force_stop()
+
     def run(self):
         service_addr = ('', self.service_port)
         #start service
@@ -109,13 +112,12 @@ class CmdProxy(threading.Thread):
 
 def start_proxy (listener = None):
      try:
-        cmd_proxy = CmdProxy(1234, listener);
-        #cmd_proxy.connect()
-
+        cmd_proxy = CmdProxy(SerialServicePort, listener);
+        cmd_proxy.connect()
+        cmd_proxy.start()
      except Exception, e:
         print "error start CmdTCP server  " + str(e)
-     finally:
-        cmd_proxy.start()
+
 def stop():
     cmd_proxy.stop()
 

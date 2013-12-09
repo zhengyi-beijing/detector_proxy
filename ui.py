@@ -5,12 +5,72 @@ from PyQt4.QtGui import *
 import sys
 import detector_proxy,  serial_proxy
 from proxy_monitor import ProxyMonitor 
+import threading
+"""
+class TestThread(threading.Thread,QObject):
+    #Signal define
+    signalRunning = pyqtSignal(bool)
+    def __init__(self):
+        threading.Thread.__init__(self, name='TestThread')
+        super(QObject, self).__init__()
+
+        self.flag = 1
+        self.alive =True
+        self.changed = False
+        pass
+    def run(self):
+        print "Thread start\n"
+        while self.alive:
+            if self.changed:
+                print "Firing  signal %d"% self.flag
+                #self.signalRunning.emit(self.flag)
+                self.listener.set_detector_running(self.flag)
+                self.changed =False
+        print "thread end\n"
+
+    def startSignal(self):
+        print "######Start Signal"
+        print "flag is "+ str(self.flag)
+        if self.flag == 1:
+            self.changed = False
+        else:
+            self.flag = 1
+            self.changed = True
+        print "changed is " + str(self.changed)
+
+
+
+    def stopSignal(self):
+        print "*****Stop Sginal"
+        print "flag is "+ str(self.flag)
+        if self.flag == 0:
+            self.changed = False
+        else:
+            self.flag = 0
+            print "         self. flag is %d"%self.flag
+            self.changed = True
+
+        print "changed is " + str(self.changed)
+
+    def stop(self):
+        self.alive = False
+
+    def setListener (self, view):
+        self.listener = view
+"""
 
 
         
 class MonitorWindow (QDeclarativeView,  ProxyMonitor):
-
     signalRunning = pyqtSignal(bool)
+    signalXrayBatteryLevel = pyqtSignal(int)
+    signalXrayConnection = pyqtSignal(bool)
+    signalDetectorBatteryLevel = pyqtSignal(int)
+    signalDetectorConnection = pyqtSignal(bool)
+    signalSpeakerStatus = pyqtSignal(bool)
+    signalStopStatus = pyqtSignal(bool)
+    signalTraceInfo = pyqtSignal(str)
+
     def __init__ (self,  parent = None):
         super(MonitorWindow,  self).__init__(parent)
         self.setWindowFlags (Qt.FramelessWindowHint | Qt.WindowSystemMenuHint)
@@ -18,6 +78,8 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
 
 
         self.connectSignalSlot()
+
+
         
     def showMaxsized (self):
         desktop = QtGui.QApplication.desktop()
@@ -31,8 +93,15 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
              #here accept the event and do something
             print event.key()
             if event.key() == Qt.Key_Escape:
-                serial_proxy.stop()
+
                 self.close()
+
+            elif event.key() == Qt.Key_Right:
+                testThread.startSignal()
+            elif event.key() == Qt.Key_Left:
+                testThread.stopSignal()
+                #self.slot_running_signal ( False)
+
             event.accept()
         else:
             event.ignore()
@@ -40,55 +109,77 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
 
 
     def connectSignalSlot(self):
-        self.signalRunning.connect(self.slot_running_signal, Qt.QueuedConnection)
 
-    def set_xray_battery_level(self,  level):
+        self.signalRunning.connect(self.slot_running_signal, Qt.QueuedConnection)
+        #testThread.signalRunning.connect(self.slot_running_signal,Qt.QueuedConnection)
+
+    #@PyQt4.QtCore.pyqtSlot(int)
+    def slot_xray_battery_level(self, level):
         self.rootObject().set_xray_battery_level (level)
-        
-    def set_scanner_battery_level(self,  level):
+    def set_xray_battery_level(self,  level):
+        self.signalXrayBatteryLevel.emit(level)
+
+    #@PyQt4.QtCore.pyqtSlot(int)
+    def slot_scanner_battery_level(self, level):
         self.rootObject().set_scanner_battery_level (level)
+    def set_scanner_battery_level(self,  level):
+        self.signalScannerBatteryLevel.emit(level)
         
 
     #@PyQt4.QtCore.pyqtSlot(bool)
     def slot_running_signal (self, running):
-        print "get signal running " +running
+        print "get signal running \n" +str(running)
         self.rootObject().set_detector_running(running)
-
     def set_detector_running (self,  running):
-        print "get detetector running " +running
-        signalRunning.emit(running)
+        print "get detetector running " +str(running)
+        self.signalRunning.emit(running)
 
-            
-    def  set_detector_connected(self,  connected):
+    #@PyQt4.QtCore.pyqtSlot(bool)
+    def slot_detector_connected (self, connected):
         self.rootObject().set_detector_connected(connected)
+    def set_detector_connected(self,  connected):
+        self.signalDetectorConnected.emit(connected)
     
-    def set_xray_connected(self,  connected):
+    #@PyQt4.QtCore.pyqtSlot(bool)
+    def slot_xray_connected(self, connected):
         self.rootObject().set_xray_connected (connected)
+    def set_xray_connected(self,  connected):
+        self.signalXrayConnected.emit(connected);
     
+    #PyQt4.QtCore.pyqtSlot(bool)
+    def slot_speaker_status(self, on):
+        self.rootObject().set_speaker_status(on)
     def set_speaker_status (self, on):
-        self.rootObject().set_speaker_status (on)
+        self.signalSpeakerStatus.emit(on)
 
-    def set_stop_status (self, stopped):
+    #PyQt4.QtCore.pyqtSlot(bool)
+    def slot_stop_status(self, stopped):
         self.rootObject().set_stop_status (stopped)
+    def set_stop_status (self, stopped):
+        self.signalStopStatus.emit(stopped)
 
-    def set_trace_info(msg) :
+    #PyQt4.QtCore.pyqtSlot(string)
+    def slot_trace_info(string):
         self.rootObejct().set_trace_info (msg)
+    def set_trace_info(msg) :
+        self.signalTraceInfo.emit(msg)
     
 if __name__ == "__main__":
-
     print "ui start"
     app = QApplication([])
+    threadPool = []
 
     view = MonitorWindow()
-    #detector_proxy.start_proxy(view)
+    detector_proxy.start_proxy(view)
     serial_proxy.start_proxy(view)
+
 
     view.setSource(QUrl("MonitorWindow.qml"))
     view.setResizeMode(QDeclarativeView.SizeRootObjectToView) 
 
     view.show()
     
-    
+    testThread.setListener(view)
     
     #view.showMaximized()
     #rootObj = view.rootObject()
@@ -96,3 +187,7 @@ if __name__ == "__main__":
     #rootObj.setProperty("width",  view.width)
     #view.showFullScreen()
     app.exec_()
+
+    serial_proxy.stop()
+    detector_proxy.stop()
+
