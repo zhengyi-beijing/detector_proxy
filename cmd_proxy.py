@@ -76,10 +76,9 @@ class CmdProxy(threading.Thread):
         detector_addr = (self.detector_ip, self.detector_cmd_port)
         print "Cmd:proxy addr is " + str(detector_addr)
         self.detector_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.detector_socket.settimeout(4)
         try:
-            self.detector_socket.settimeout(2)
             self.detector_socket.connect(detector_addr)
-
             print "connect successful"
             self.listener.set_detector_connected(True)
         except socket.error, msg:

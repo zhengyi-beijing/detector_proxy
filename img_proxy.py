@@ -53,10 +53,12 @@ class ImgProxy(threading.Thread):
         self.detector_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096*8192)
         #self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
-        self.detector_socket.settimeout(2)
+        self.detector_socket.settimeout(4)
         bufsize = self.detector_socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF);
         print "ImgProxy:: recv buf size is %d \n" % bufsize
         try:
+            #import pdb
+            #pdb.set_trace()
             self.detector_socket.connect(detector_addr)
             print "ImgProxy:: detector connect successful"
             self.listener.set_detector_connected(True)

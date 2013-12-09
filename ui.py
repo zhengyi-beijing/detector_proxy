@@ -187,17 +187,18 @@ if __name__ == "__main__":
         view.setSource(QUrl("MonitorWindow.qml"))
         view.setResizeMode(QDeclarativeView.SizeRootObjectToView)
         view.show()
-
+        view.showFullScreen()
         serialProxy = serial_proxy.start_proxy(view)
         cmdProxy = cmd_proxy.start_proxy(detector_ip, cmd_port, cmd_port,view)
         imgProxy = img_proxy.start_proxy(detector_ip, img_port, img_port,view)
 
-        view.showFullScreen()
-        app.exec_()
+        #app.exec_()
+
+
     except:
         print "star proxy failed"
 
-
+    app.exec_()
     serialProxy.stop()
     cmdProxy.stop()
     imgProxy.stop()
