@@ -18,11 +18,11 @@ class Receiver(threading.Thread):
         threading.Thread.__init__(self, name= t_name)
         self.queue = queue
         self.socket = socket
-    def run():
+    def run(self):
         while True:
             try:
                 data = self.socket.recv(1024)
-                self.server.queue.put(data)
+                self.queue.put(data)
             except:
                 traceback.print_exc()
                 break
@@ -59,7 +59,6 @@ class ImgTCPServer(ThreadingTCPServer):
         print "ImgTCPServer force quit"
         self.queue.put(None)
         self.stopped = True
-        self.detector_socket.close ()
         self.server_close()
 
 class ImgProxy(threading.Thread):
@@ -86,6 +85,7 @@ class ImgProxy(threading.Thread):
             print "ImgProxy:: detector connect successful"
             self.listener.set_detector_connected(True)
             self.receiver = Receiver("receiver", self.detector_socket, self.queue)
+            self.receiver.start()
 
         except socket.error, msg:
 
@@ -96,7 +96,7 @@ class ImgProxy(threading.Thread):
         service_addr = ('', self.service_port)
 
         #start service
-        self.server = ImgTCPServer(service_addr, MyImgBaseRequestHandlerr, self.detector_socket, self.listener, self.queue)
+        self.server = ImgTCPServer(service_addr, MyImgBaseRequestHandlerr, self.listener, self.queue)
         self.server.serve_forever()
 
     def stop(self):
