@@ -11,24 +11,51 @@ import time
 import sys,  getopt
 
 #current implement tation for image channel just support one client
-DataReady = threading.Condition()
 
 class Receiver(threading.Thread):
-    def __init__(self, t_name, socket, queue):
+    def __init__(self, t_name, queue, addr):
         threading.Thread.__init__(self, name= t_name)
         self.queue = queue
-        self.socket = socket
+        #self.socket = socket
+        self.alive =True
+        self.addr = addr
+
+    def connect(self):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
+        try:
+            self.socket.connect(self.addr)
+            print "ImgProxy:: detector connect successful"
+            #self.listener.set_detector_connected(True)
+            return True
+
+        except socket.error, msg:
+            print "ImgProxy:: detector connect failed:[ERROR] %s\n" % msg[1]
+            #self.listener.set_detector_connected(False)
+            return False
+
+    def disconnect(self):
+        self.socket.close()
+
     def run(self):
-        while True:
-            try:
-                data = self.socket.recv(1024)
-                self.queue.put(data)
-            except:
-                traceback.print_exc()
-                break
+        if self.connect():
+            while self.alive:
+                try:
+                    data = self.socket.recv(1024)
+                    self.queue.put(data)
+                except:
+                    traceback.print_exc()
+                    break
+            self.disconnect()
+            print "Receiveer quit\n"
+
+    def stop(self):
+        self.alive = False;
 
 class MyImgBaseRequestHandlerr(StreamRequestHandler):
     def handle(self):
+        receiver = Receiver("receiver", self.server.queue, self.server.detector_addr)
+        receiver.start()
 
         while True:
             try:
@@ -43,13 +70,16 @@ class MyImgBaseRequestHandlerr(StreamRequestHandler):
             except:
                 traceback.print_exc()
                 break
+        receiver.stop()
+        receiver.join()
 
 class ImgTCPServer(ThreadingTCPServer):
-    def __init__(self, service_addr, handler, listener, queue):
+    def __init__(self, service_addr, handler, listener, queue, detector_addr):
         ThreadingTCPServer.__init__(self, service_addr, handler)
         self.stopped = False
         self.listener = listener
         self.queue = queue
+        self.detector_addr = detector_addr
 
     def serve_forever(self):
         while not self.stopped:
@@ -59,49 +89,30 @@ class ImgTCPServer(ThreadingTCPServer):
         print "ImgTCPServer force quit"
         self.queue.put(None)
         self.stopped = True
+        self.socket.close()
         self.server_close()
 
 class ImgProxy(threading.Thread):
     def __init__(self, detector_ip, detector_img_port, service_port, listener):
-        threading.Thread.__init__(self, name='CmdProxy')
+        threading.Thread.__init__(self, name='Proxy')
         self.detector_ip = detector_ip
         self.detector_img_port = detector_img_port
         self.service_port = service_port
         self.listener = listener
         self.queue = Queue()
 
-    def connect(self):
-        detector_addr = (self.detector_ip, self.detector_img_port)
-        self.detector_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096*8192)
-        #self.detector_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
-        #self.detector_socket.settimeout(4)
-        bufsize = self.detector_socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF);
-        print "ImgProxy:: recv buf size is %d \n" % bufsize
-        try:
-            #import pdb
-            #pdb.set_trace()
-            self.detector_socket.connect(detector_addr)
-            print "ImgProxy:: detector connect successful"
-            self.listener.set_detector_connected(True)
-            self.receiver = Receiver("receiver", self.detector_socket, self.queue)
-            self.receiver.start()
 
-        except socket.error, msg:
-
-            print "ImgProxy:: detector connect failed:[ERROR] %s\n" % msg[1]
-            self.listener.set_detector_connected(False)
 
     def run(self):
         service_addr = ('', self.service_port)
-
+        detector_addr = (self.detector_ip, self.detector_img_port)
         #start service
-        self.server = ImgTCPServer(service_addr, MyImgBaseRequestHandlerr, self.listener, self.queue)
+        self.server = ImgTCPServer(service_addr, MyImgBaseRequestHandlerr, self.listener, self.queue, detector_addr)
         self.server.serve_forever()
 
     def stop(self):
         #close socket should cause exception on the receiver
-        self.detector_socket.close()
+        #self.detector_socket.close()
         self.server.force_stop()
 
 def start_proxy(detector_ip, detector_cmd_port, service_port,listener):
@@ -109,7 +120,7 @@ def start_proxy(detector_ip, detector_cmd_port, service_port,listener):
 
         proxy = ImgProxy(detector_ip, detector_cmd_port, service_port,listener)
         proxy.setDaemon(True)
-        proxy.connect()
+#        proxy.connect()
         proxy.start()
         return proxy;
     except Exception, e:

@@ -177,6 +177,7 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     
 if __name__ == "__main__":
     detector_ip = "192.168.2.2"
+    #detector_ip = "127.0.0.1"
     cmd_port = 3000;
     img_port = 4001;
     print "ui start"
@@ -188,8 +189,8 @@ if __name__ == "__main__":
         view.setResizeMode(QDeclarativeView.SizeRootObjectToView)
         view.show()
        # view.showFullScreen()
-        serialProxy = serial_proxy.start_proxy(view)
-        cmdProxy = cmd_proxy.start_proxy(detector_ip, cmd_port, cmd_port,view)
+        #serialProxy = serial_proxy.start_proxy(view)
+        #cmdProxy = cmd_proxy.start_proxy(detector_ip, cmd_port, cmd_port,view)
         imgProxy = img_proxy.start_proxy(detector_ip, img_port, img_port,view)
 
         #app.exec_()
@@ -199,7 +200,7 @@ if __name__ == "__main__":
         print "star proxy failed"
 
     app.exec_()
-    serialProxy.stop()
-    cmdProxy.stop()
+    #serialProxy.stop()
+    #cmdProxy.stop()
     imgProxy.stop()
 
