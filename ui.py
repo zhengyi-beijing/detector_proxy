@@ -2,8 +2,10 @@ from PyQt4.QtDeclarative import QDeclarativeView
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import sys
-import cmd_proxy,  serial_proxy, img_proxy
+import sys, traceback
+#import cmd_proxy,  serial_proxy, img_proxy
+import no_blocking_proxy as detector_server
+import serial_proxy
 from proxy_monitor import ProxyMonitor 
 import threading
 import reg
@@ -189,18 +191,15 @@ if __name__ == "__main__":
         view.setResizeMode(QDeclarativeView.SizeRootObjectToView)
         view.show()
        # view.showFullScreen()
-        #serialProxy = serial_proxy.start_proxy(view)
-        #cmdProxy = cmd_proxy.start_proxy(detector_ip, cmd_port, cmd_port,view)
-        imgProxy = img_proxy.start_proxy(detector_ip, img_port, img_port,view)
-
-        #app.exec_()
-
-
-    except:
+        serialProxy = serial_proxy.start_proxy(view)
+        server = detector_server.DetectorServer()
+        server.start("detector", "192.168.2.2", 3000,4001,3000,4001, view)
+        app.exec_()
+    except Exception, e:
         print "star proxy failed"
-
-    app.exec_()
-    #serialProxy.stop()
-    #cmdProxy.stop()
-    imgProxy.stop()
+        print e
+        traceback.print_exc()
+    #app.exec_()
+    serialProxy.stop()
+    server.stop()
 

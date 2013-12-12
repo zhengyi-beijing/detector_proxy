@@ -1,14 +1,16 @@
 #python
 import serial
 
-from SocketServer import ThreadingTCPServer, StreamRequestHandler
+#from SocketServer import ThreadingTCPServer, StreamRequestHandler
 import socket
 import threading
 import time
 import sys
+import tcp_serial_redirect as TcpRedirector
 
 SerialServicePort=1234
 COM = "COM2"
+"""
 class MyCmdBaseRequestHandlerr(StreamRequestHandler):
     def handle(self):
         while True:
@@ -115,17 +117,73 @@ class SerialProxy(threading.Thread):
             if hasattr(self, 'serial') is not None:
                 self.serial.close()
 
+"""
+
+class NoBlockingSerialProxy(threading.Thread):
+    def __init__(self, service_port, listener):
+        threading.Thread.__init__(self)
+        self.port = service_port
+        self.listener = listener
+        self.Alive = True
+        self.setupSerial()
+        self.daemon = True
+
+    def setupSerial(self):
+        self.ser = serial.Serial()
+        self.ser.port     = "COM2"
+        self.ser.timeout  = 1     # required so that the reader thread can exit
+
+
+    def run(self):
+        try:
+            self.ser.open()
+        except serial.SerialException, e:
+            sys.stderr.write("Could not open serial port %s: %s\n" % (ser.portstr, e))
+            return
+
+        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv.bind( ('', self.port) )
+        srv.listen(1)
+        while self.Alive:
+            try:
+                print "SerialProxy waiting for connection on %s ...\n"%self.port
+                connection, addr = srv.accept()
+                print "Connected by %s\n"%(addr,)
+                self.redirector = TcpRedirector.Redirector(
+                    self.ser,
+                    connection,
+                    spy = True
+                )
+                print "Redirector shortcut"
+                self.redirector.shortcut()
+                print "SerialProxy Disconnected\n"
+                connection.close()
+            except socket.error, msg:
+                sys.stderr.write('ERROR: %s\n' % msg)
+
+    def stop(self):
+        self.Alive = False
+        self.redirector.stop()
+
+        print "Redirector stopped"
+
+
+
 def start_proxy (listener = None):
-     try:
-        proxy = SerialProxy(SerialServicePort, listener);
-        proxy.openSerial()
-        proxy.start()
-        return proxy
-     except Exception, e:
-        print "error start CmdTCP server  " + str(e)
-        proxy.stop
+
+    proxy = NoBlockingSerialProxy(SerialServicePort, listener);
+    proxy.start()
+    return proxy
 
 
-#if __name__ == '__main__':
 
-#    start_proxy()
+
+
+if __name__ == '__main__':
+
+    start_proxy()
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        sys.exit(1)
