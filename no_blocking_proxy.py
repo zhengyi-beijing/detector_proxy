@@ -139,7 +139,7 @@ class NoBlockingProxy(threading.Thread):
 
 
     def on_detector_writable(self,s):
-        while not self.client_queue.empty():
+        if  not self.client_queue.empty():
 
             data = self.client_queue.get()
             try:
@@ -150,7 +150,7 @@ class NoBlockingProxy(threading.Thread):
                 print "detector send data error%s\n"% msg[1]
 
     def on_client_writable(self,s):
-        while not self.detector_queue.empty():
+        if  not self.detector_queue.empty():
             data = self.detector_queue.get()
             try:
                 #print "on_client_writable:: write %s\n"%data
