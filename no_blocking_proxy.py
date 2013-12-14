@@ -32,7 +32,7 @@ class NoBlockingProxy(threading.Thread):
         self.Alive = True;
         self.max_clients_num = max_clients_num
         self.daemon = True
-
+        self.clearBuf = False
 
     def init(self):
         #create listener socket
@@ -70,8 +70,7 @@ class NoBlockingProxy(threading.Thread):
 
             return True;
         except socket.error, msg:
-            print self.name+"::"
-            print  ":: detector connect failed:[ERROR] \n" , msg
+            print msg
         self.inputs.append(self.detector)
 
         return True
@@ -100,7 +99,7 @@ class NoBlockingProxy(threading.Thread):
         try:
             data = s.recv(4096)
             if data :
-                print "on_detector_data_comming: received data:", data
+        #        print "on_detector_data_comming: received data:", data
                 self.detector_queue.put(data)
             else:
                 print "detector close the socket:\n"
@@ -115,20 +114,26 @@ class NoBlockingProxy(threading.Thread):
     def post_process_cmd(self, cmd):
         pass
 
+    def remove_socket (self, s):
+        if s in self.inputs:
+            print "**** Remove socket***"
+            #self.inputs.remove(s)
+            self.inputs = [ i for i in self.inputs if i!=s]
+            s.close()
+
     def on_client_data_comming(self, s):
         try:
             print "on_client_data_comming\n"
             data = s.recv(128)
+            self.pre_process_cmd(data)
             if data:
-
-                self.pre_process_cmd(data)
                 self.client_queue.put(data)
             else:
-                print "closing client"
-                if s in self.inputs:
-                    self.inputs.remove(s)
-                    s.close()
-
+                print "*************closing client\n"
+                print " ********* There is %d sockets in inputs"%len(self.inputs)
+                self.remove_socket(s)
+                self.remove_socket(self.detector)
+                print " ********* There is %d sockets in inputs"%len(self.inputs)
         except socket.error, e:
                 print "error is no blocking"
 
@@ -140,7 +145,7 @@ class NoBlockingProxy(threading.Thread):
             try:
                 print "on_detector_writable:: write %s\n"%data
                 self.detector.send(data)
-                self.post_process_(cmd)
+                self.post_process_cmd(data)
             except socket.error, msg:
                 print "detector send data error%s\n"% msg[1]
 
@@ -148,7 +153,7 @@ class NoBlockingProxy(threading.Thread):
         while not self.detector_queue.empty():
             data = self.detector_queue.get()
             try:
-                print "on_client_writable:: write %s\n"%data
+                #print "on_client_writable:: write %s\n"%data
                 s.send(data)
             except socket.error, msg:
                 print "detector send data error%s\n"% msg[1]
@@ -202,6 +207,13 @@ class CmdChannelProxy (NoBlockingProxy):
         self.img_channel_proxy = proxy
 
 
+    def pre_process_cmd(self, cmd):
+        if cmd:
+            return
+        else:
+            #shutdown the detector cmd and img channel because cmd client shut down
+            pass
+
     def post_process_cmd(self, cmd):
         if "[SF,0]" in cmd:
             print "CmdChannel get SF,0"
@@ -210,6 +222,8 @@ class CmdChannelProxy (NoBlockingProxy):
             #according to the xview code, the xview should clear all remain data in socket pipe in 250 ms
             self.img_channel_proxy.set_clear_flag()
 
+        if "ST,W" in cmd:
+            pass
 
 class DetectorServer():
     def __init__(self):
