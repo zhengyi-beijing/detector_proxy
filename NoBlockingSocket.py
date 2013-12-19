@@ -32,7 +32,7 @@ class SocketClientThread(threading.Thread):
         self.name = name
         self.output_queue = output_queue
         self.input_queue = input_queue
-        self.timeout = 1
+        self.timeout = 0.1
         self.addr = addr
         self.daemon = True
         self.sockets = []
@@ -137,7 +137,7 @@ class ProxyThread (threading.Thread):
         self.daemon = True
         self.clearBuf = False
         self.monitor = None
-        self.timeout = 1
+        self.timeout = 0.1
         self._open()
 
     def setMonitor(monitor):
