@@ -6,30 +6,44 @@ Rectangle {
     height: 600
     //anchors.fill: parent
     color: "lightblue"
-    /*
-    gradient: Gradient {
-         GradientStop { position: 0.0; color: "lightblue" }
-         GradientStop { position: 1.0; color: "blue" }
-        }*/
-    function set_scanner_battery_level (level){
-        
+
+    function set_scanner_battery_level(level) {
+        if (level==0) {
+        detector_battery.source = "res\\pwr0.png"
+            }
+        if (level==1) {
+            detector_battery.source = "res\\pwr1.png"
+            }
+    if (level==2) {
+            detector_battery.source = "res\\pwr2.png"
+            }
+    if (level==3) {
+            detector_battery.source = "res\\pwr3.png"
+            }
+    if (level==4) {
+            detector_battery.source = "res\\pwr4.png"
+            }
+    if (level==5) {
+            detector_battery.source = "res\\pwr5.png"
+            }
     }
-    
+
     function set_xray_battery_level(level) {
     }
-    
+
     function set_detector_running (running) {
             runing_status.running = running
     }
-    
+
+
     function set_detector_connected(connected) {
         if (connected) {
-            detector_connection.source = "res\\CONNECTED.png"
+            detector_connection.source = "res\\ct.png"
         } else {
-            detector_connection.source = "res\\UNCONNECTED.png"
+            detector_connection.source = "res\\noct.png"
         }
     }
-    
+
     function set_xray_connected(connected) {
         if (connected) {
             xray_connection.source = "res\\CONNECTED.png"
@@ -37,155 +51,109 @@ Rectangle {
             xray_connection.source = "res\\UNCONNECTED.png"
         }
     }
-    
+
     function set_speaker_status (on) {
         if(on) {
-            speaker.source = "res\\PCS-EN.png"
+            speaker.source = "res\\pcs.png"
         } else {
-            speaker.source = "res\\PCS-DI.png"
+            speaker.source = "res\\dis-pcs.png"
         }
     }
 
     function set_stop_status (stopped) {
         if (stopped) {
-            stopped.source = "res\\ES-EN.png"
+            emstop.source = "res\\stop.png"
         } else {
-            stopped.source = "res\\ES-LK.png"
+            emstop.source = "res\\stop-lk.png"
         }
     }
 
     function set_trace_info(msg) {
-        log.text = msg
+    log.text = msg
     }
-    
 
-    
-    Column {
-        spacing: 2
-        //anchors.fill: parent
-        height:parent.height
-        Rectangle {
-            id: title_area
-            height: parent.height/6
-            width : parent.width
+
+    function set_speed_info(level) {
+        speed.text = level
+    }
+
+
+    Image {
+        anchors.fill:parent
+        anchors.horizontalCenter : title_area.horizontalCenter
+        id: appons
+        source:"res\\portable-UI-bk.png"
+    }
+
+    Item {
+        AnimatedCircle {
+            id: runing_status
             color:"transparent"
-            
-            Image {
-                anchors.fill:parent
-                anchors.margins : 20
-                anchors.horizontalCenter : title_area.horizontalCenter
-                //anchors.baseline : title_area.verticalCenter
-
-                id: appons
-                source:"res\\Appons-With_R1.png"
-            }
+            x:108;y:175
+            height: 300
+            width: 300
         }
-        Row {
-                width: window.width
-                height:window.height - title_area.height-status_system.height
-                //color:"green"
-                Item {
-                    width:200
-                    height:parent.height
-                    id:battery_xray_info
-                    //color:"yellow"
-                    BatteryBar {
-                        id: xray_battery
-                        width:parent.width
-                        height:300
-                        anchors.horizontalCenter : parent.horizontalCenter
+    }
+    Image {
+        id: detector_connection
+        x:620;y:135
+        height : 270
+        width : 112
+        fillMode: Image.PreserveAspectFit
+        source: "res\\noct.png"
+    }
+    Image {
+        id: detector_battery
+        x:620;y:190
+        height : 270
+        width : 112
+        fillMode: Image.PreserveAspectFit
+        source: "res\\pwr5.png"
+    }
+    Text {
+        id: speed
+        x:630;y:375
+        height: 100
+        width: 270
+        font.pointSize:20
+        color:"lightgreen"
 
-                    }
-                    
-                    Image { 
-                        id: xray_connection
-                        height :80
-                        width : 80
-                        fillMode: Image.PreserveAspectFit
-                        source: "res\\CONNECTED.png"
-                        anchors.horizontalCenter : parent.horizontalCenter
-                        anchors.bottom:parent.bottom
+    }
+    Text {
+        id: log
+        x:150;y:500
+        height: 120
+        width: 500
+        text: "Waiting"
+        font.pointSize:30
+        font.bold: true
+        color:"lightgreen"
 
-                    }
-                }
-                
-                Item {
-                    width: parent.width-battery_xray_info.width-battery_detector_info.width
-                    height: parent.height
-                    AnimatedCircle {
-                        id: runing_status
-                        color:"transparent"
-                        //height:window.height - title_area.height
-                        height: parent.height - log.height
-                        width: parent.width
-                    }
-                    
+    }
 
-                }
-                
-                Item {
-                    width:battery_xray_info.width
-                    height:parent.height
-                    id: battery_detector_info
-                    //color:"red"
-                    BatteryBar {
-                        id: detector_battery
-                        width:parent.width
-                        height:300
-                        anchors.horizontalCenter : parent.horizontalCenter
-                    }
-                    
-                    Image { 
-                        id: detector_connection
-                        height :80
-                        width : parent.width
-                        fillMode: Image.PreserveAspectFit
-                        source: "res\\CONNECTED.png"
-                        anchors.horizontalCenter : parent.horizontalCenter
-                        anchors.bottom:parent.bottom
-                    }
-                }
-             }
+    Image {
+        id: emstop
+        x:550;y:480
+        height : 100
+        width : height
+        fillMode: Image.PreserveAspectFit
+        source: "res\\stop.png"
+    }
 
-        Item {
-                id: status_system
-        //        anchors.bottom:parent.bottom
-                width:parent.width
-                height:80
-               // color:"red"
+    Image {
+        id: speaker
+        x:680;y:480
+        height : 100
+        width : height
+        fillMode: Image.PreserveAspectFit
+        source: "res\\dis-pcs.png"
 
-                Text {
-                    id: log
-                    height: parent.height
-                    width: parent.width-stopped.width-speaker.width
-                    text: "Waiting"
-                    font.pointSize:24
-                    anchors.left: parent.left
-                    anchors.margins: 10
-                }
+    }
 
-                Image {
-                    id: stopped
-                    height : parent.height
-                    width : height
-                    fillMode: Image.PreserveAspectFit
-                    source: "res\\ES-EN.png"
-                    //source: "res\\CONNECTED.png"
-                    //anchors.bottom: parent.bottom
-                    anchors.right: speaker.left
-                }
-
-                Image {
-                    id: speaker
-                    height : parent.height
-                    width : height
-                    fillMode: Image.PreserveAspectFit
-                    source: "res\\PCS-DI.png"
-                    //anchors.bottom: parent.bottom
-                    anchors.right: parent.right
-                }
-            }
-
+    Item {
+        id: status_system
+        width:parent.width/1.1
+        height:window.height/5
 
     }
 }
