@@ -3,66 +3,11 @@ from PyQt4.QtDeclarative import QDeclarativeView
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys, traceback
-#import cmd_proxy,  serial_proxy, img_proxy
-import no_blocking_proxy as detector_server
-import serial_proxy
+import NoBlockingProxy as detector_server
+import SerialProxy
 from proxy_monitor import ProxyMonitor 
 import threading
 import reg
-"""
-class TestThread(threading.Thread,QObject):
-    #Signal define
-    signalRunning = pyqtSignal(bool)
-    def __init__(self):
-        threading.Thread.__init__(self, name='TestThread')
-        super(QObject, self).__init__()
-
-        self.flag = 1
-        self.alive =True
-        self.changed = False
-        pass
-    def run(self):
-        print "Thread start\n"
-        while self.alive:
-            if self.changed:
-                print "Firing  signal %d"% self.flag
-                #self.signalRunning.emit(self.flag)
-                self.listener.set_detector_running(self.flag)
-                self.changed =False
-        print "thread end\n"
-
-    def startSignal(self):
-        print "######Start Signal"
-        print "flag is "+ str(self.flag)
-        if self.flag == 1:
-            self.changed = False
-        else:
-            self.flag = 1
-            self.changed = True
-        print "changed is " + str(self.changed)
-
-
-
-    def stopSignal(self):
-        print "*****Stop Sginal"
-        print "flag is "+ str(self.flag)
-        if self.flag == 0:
-            self.changed = False
-        else:
-            self.flag = 0
-            print "         self. flag is %d"%self.flag
-            self.changed = True
-
-        print "changed is " + str(self.changed)
-
-    def stop(self):
-        self.alive = False
-
-    def setListener (self, view):
-        self.listener = view
-"""
-
-
         
 class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     signalRunning = pyqtSignal(bool)
@@ -191,15 +136,17 @@ if __name__ == "__main__":
         view.setResizeMode(QDeclarativeView.SizeRootObjectToView)
         view.show()
        # view.showFullScreen()
-        serialProxy = serial_proxy.start_proxy(view)
-        server = detector_server.DetectorServer()
-        server.start("detector", "192.168.2.2", 3000,4001,3000,4001, view)
+        serialProxy = SerialProxy.start_proxy(view)
+        server = detector_server.DetectorServer("detector", "192.168.1.25", 3000,4001,3000,4001, view)
+        server.start()
         app.exec_()
     except Exception, e:
         print "star proxy failed"
         print e
         traceback.print_exc()
     #app.exec_()
-    serialProxy.stop()
-    server.stop()
+    if serialProxy:
+        serialProxy.stop()
+    if server:
+        server.stop()
 
