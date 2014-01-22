@@ -7,21 +7,34 @@ import Queue
 import threading
 import time
 import NoBlockingSocket as NS
+from PyQt4.QtCore import *
 
-class ChannelProxy(object, NS.Monitor):
+class ChannelProxy(QObject, NS.Monitor):
     def __init__(self, name, detector_ip, detector_port, service_port, listener=None):
+        super(ChannelProxy,  self).__init__(None)
         self.input_queue = Queue.Queue()
         self.output_queue = Queue.Queue()
         self.detector_thread  = NS.SocketClientThread(name+"_detector", (detector_ip, service_port), self.input_queue, self.output_queue)
-        self.proxy_thread  = NS.ProxyThread(name+"_proxy", service_port, self.input_queue, self.output_queue)
+        self.proxy_thread  = NS.ProxyThread(name+"_proxy", service_port, self.input_queue, self.output_queue, self)
+        self.checkTimer = QTimer(self)
+        self.listener = listener
 
     def start(self):
         self.detector_thread.start()
         self.proxy_thread.start()
+        self.checkTimer.singleShot(2000, self.timeOut)
 
     def stop(self):
         self.detector_thread.stop()
         self.proxy_thread.stop()
+
+    def timeOut(self):
+        if self.detector_thread.connected:
+            print "detector connected  "
+        else:
+            print "detetor not connected"
+        if (self.listener):
+            self.listener.set_detector_connected(self.detector_thread.connected)
 
 class ImgProxy (ChannelProxy):
     totalbytes = 0
@@ -49,20 +62,32 @@ class CmdProxy (ChannelProxy):
         self.img_proxy = img_proxy
 
     def pre_process_data(self, cmd):
-        if "SDR" in cmd:#setup start grab status
-            if "1" in cmd:
-                pass
-            elif "0" in cmd:
-                pass
+        print "pre_process_data in"
+        if "[SDR,1]" in cmd:#setup start grab status
+            print "get detector sdr 1"
+            self.listener.set_detector_running (True)
+        elif "[SDR,0]" in cmd:
+            print "get detector sdr 0"
+            self.listener.set_detector_running (False)
+
         if "SDC" in cmd: #setup detector connection:
             if "1" in cmd:
+                self.listener.set_detector_connected(True)
                 pass
             elif "0" in cmd:
+                self.listener.set_detector_connected(False)
                 pass
         if "SDB" in cmd:  #setup battery info
             pass
 
         if "SDS" in cmd:#setup detector speed
+            nPos = cmd.index("SDS")
+            speed = cmd[nPos+len("SDS")+1:]
+            print "speed is" + speed
+            speed = speed[:len(speed)-1]
+            print speed
+            self.listener.set_detector_speed(speed)
+
             pass
 
         if "SSR" in cmd:#setup speaker status
@@ -79,6 +104,7 @@ class CmdProxy (ChannelProxy):
 
         if "STI" in cmd: #setup the display info: warning msg error etc
             pass
+        return True
 
     def post_process_data(self, cmd):
         if "[SF,0]" in cmd:

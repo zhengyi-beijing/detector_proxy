@@ -19,7 +19,7 @@ Rectangle {
             from: 0
             to: 360
             duration: 3000 // Define the desired rotation speed.
-            running:true
+            running:false
         }
     }
 }

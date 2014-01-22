@@ -73,8 +73,9 @@ Rectangle {
     }
 
 
-    function set_speed_info(level) {
-        speed.text = level
+    function set_detector_speed(s) {
+        console.log("speed is "+s)
+        speed.text = s
     }
 
 
@@ -117,6 +118,7 @@ Rectangle {
         width: 270
         font.pointSize:20
         color:"lightgreen"
+        text: "0"
 
     }
     Text {

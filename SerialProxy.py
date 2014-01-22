@@ -1,7 +1,6 @@
 #python
 import serial
 
-#from SocketServer import ThreadingTCPServer, StreamRequestHandler
 import socket
 import threading
 import time
@@ -19,6 +18,7 @@ class NoBlockingSerialProxy(threading.Thread):
         self.Alive = True
         self.setupSerial()
         self.daemon = True
+        self.redirector = None
 
     def setupSerial(self):
         self.ser = serial.Serial()
@@ -56,8 +56,9 @@ class NoBlockingSerialProxy(threading.Thread):
                 sys.stderr.write('ERROR: %s\n' % msg)
 
     def stop(self):
+        if (self.redirector):
+            self.redirector.stop()
         self.Alive = False
-        self.redirector.stop()
 
         print "Redirector stopped"
 

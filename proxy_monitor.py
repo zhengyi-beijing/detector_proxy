@@ -22,3 +22,5 @@ class ProxyMonitor ():
 
     def set_trace_info(msg) :
         pass
+    def set_detector_speed(self, speed):
+        pass

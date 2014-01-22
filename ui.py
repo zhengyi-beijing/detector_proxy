@@ -18,6 +18,7 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     signalSpeakerStatus = pyqtSignal(bool)
     signalStopStatus = pyqtSignal(bool)
     signalTraceInfo = pyqtSignal(str)
+    singalDetectorSpeed = pyqtSignal(str)
 
     def __init__ (self,  parent = None):
         super(MonitorWindow,  self).__init__(parent)
@@ -67,6 +68,8 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
         self.signalRunning.connect(self.slot_running_signal, Qt.QueuedConnection)
         self.signalDetectorConnected.connect(self.slot_detector_connected, Qt.QueuedConnection)
         self.signalTraceInfo.connect (self.slot_trace_info, Qt.QueuedConnection)
+        self.signalTraceInfo.connect (self.slot_trace_info, Qt.QueuedConnection)
+        self.singalDetectorSpeed.connect(self.slot_detector_speed, Qt.QueuedConnection)
         #testThread.signalRunning.connect(self.slot_running_signal,Qt.QueuedConnection)
 
     #@PyQt4.QtCore.pyqtSlot(int)
@@ -122,6 +125,14 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
     def set_trace_info(self, msg) :
         self.signalTraceInfo.emit(msg)
     
+    #PyQt4.QtCore.pyqtSlot(string)
+    def slot_detector_speed(self, speed):
+        print "qml call speed is " + speed
+        self.rootObject().set_detector_speed(speed)
+    def set_detector_speed(self, speed):
+        print "speed is " + speed
+        self.singalDetectorSpeed.emit(speed)
+
 if __name__ == "__main__":
     detector_ip = "192.168.2.2"
     #detector_ip = "127.0.0.1"

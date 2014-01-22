@@ -42,6 +42,7 @@ class SocketClientThread(threading.Thread):
         self.connected = False
         self._open()
 
+
     def setMonitor(monitor):
         self.monitor = monitor
 
@@ -80,19 +81,30 @@ class SocketClientThread(threading.Thread):
             else:
                 print "detector close the socket:\n"
                 return False
-        except:
-            print "detector recv exception happen:\n"
+        except socket.error, e:
+            (err_no, err_msg) = e
+            print "error is %s"%err_msg
+            print "errornumber is %d"%err_no
+            if(err_no == 10054):
+                self.sockets.remove(s)
+                s.close()
             return False
 
     def on_socket_writable(self,s):
         if self.connected == False:
-            self.connected == True
+            print "Socket became writable, connected is true"
+            self.connected = True
         if  not self.input_queue.empty():
             data = self.input_queue.get()
             try:
                 self.socket.send(data)
-            except socket.error, msg:
-                print "detector send exception happen:\n"
+            except socket.error, e:
+                (err_no, err_msg) = e
+                print "error is %s"%err_msg
+                print "errornumber is %d"%err_no
+                if(err_no == 10054):
+                    self.sockets.remove(s)
+                    s.close()
                 return False
 
     def run(self):
@@ -136,7 +148,7 @@ class ProxyThread (threading.Thread):
         self.Alive = True;
         self.daemon = True
         self.clearBuf = False
-        self.monitor = None
+        self.monitor = monitor
         self.timeout = 0.1
         self._open()
 
@@ -181,18 +193,26 @@ class ProxyThread (threading.Thread):
         try:
             print "on_client_data_comming\n"
             data = s.recv(128)
-            if self.monitor:
-                self.monitor.pre_process_data(data)
             if data:
                 print "Proxy get data %s\n"% data
-                self.input_queue.put(data)
+                send = True
+                if self.monitor:
+                    print "call pre_processs_data"
+                    send = self.monitor.pre_process_data(data)
+                if (send):
+                    self.input_queue.put(data)
             else:
                 print "*************closing client\n"
                 print " ********* There is %d sockets in inputs"%len(self.inputs)
                 self.remove_socket(s)
                 print " ********* There is %d sockets in inputs"%len(self.inputs)
         except socket.error, e:
-            print "error is no blocking"
+            (err_no, err_msg) = e
+            print "error is %s"%err_msg
+            print "errornumber is %d"%err_no
+            if(err_no == 10054):
+                self.remove_socket(s)
+
 
     def on_client_writable(self,s):
         if  not self.output_queue.empty():
@@ -200,8 +220,12 @@ class ProxyThread (threading.Thread):
             try:
                 #print "on_client_writable:: write %s\n"%data
                 s.send(data)
-            except socket.error, msg:
-                print "detector send data error%s\n"% msg[1]
+            except socket.error, e:
+                (err_no, err_msg) = e
+                print "error is %s"%err_msg
+                print "errornumber is %d"%err_no
+                if(err_no == 10054):
+                    self.remove_socket(s)
 
     def process(self):
         print "start process"
@@ -212,7 +236,7 @@ class ProxyThread (threading.Thread):
                     #there is new connect request
                     self.on_new_client_comming (s)
                 else:
-                        #data comming from client
+                    #data comming from client
                     self.on_client_readable(s)
             for s in writable:
                 if s is not self.server:
