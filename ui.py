@@ -156,8 +156,8 @@ if __name__ == "__main__":
         print e
         traceback.print_exc()
     #app.exec_()
-    if serialProxy:
-        serialProxy.stop()
+    #if serialProxy:
+    #    serialProxy.stop()
     if server:
         server.stop()
 

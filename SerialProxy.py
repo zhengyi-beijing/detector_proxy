@@ -30,7 +30,7 @@ class NoBlockingSerialProxy(threading.Thread):
             self.ser.open()
             return True
         except serial.SerialException, e:
-            sys.stderr.write("Could not open serial port %s: %s\n" % (ser.portstr, e))
+            sys.stderr.write("Could not open serial port %s: %s\n" % (self.ser.portstr, e))
             return False
 
     def run(self):
