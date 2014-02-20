@@ -40,13 +40,13 @@ class SocketClientThread(threading.Thread):
         self.Alive =True
         self.clearBuf = False
         self.connected = False
-        self._open()
+        self.open()
 
 
     def setMonitor(monitor):
         self.monitor = monitor
 
-    def _open(self):
+    def open(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
         try:
@@ -54,19 +54,20 @@ class SocketClientThread(threading.Thread):
             print self.name+"::"
             print "open_detector Tring connect to ", self.addr
             self.socket.connect(self.addr)
+			
             print "open_detector connected  "
-            return True;
+
         except socket.error, msg:
             print socket.error, msg
-
-        self.sockets.append(self.socket)
+        if not (self.socket in self.sockets):
+            self.sockets.append(self.socket)
         return True
 
     def _close(self):
         if not self.socket:
             return
         self.socket.close()
-        self.sockets.remove(self.socket)
+        #self.sockets.remove(self.socket)
         self.socket = None;
         clearQueue(self.input_queue)
         clearQueue(self.output_queue)
@@ -113,11 +114,11 @@ class SocketClientThread(threading.Thread):
                 empty_socket(self.socket)
                 clearQueue(self.queue)
                 self.clearBuf = False
-            try:
-                readable, writable, exceptional = select.select (self.sockets, self.sockets, [], self.timeout)
-            except :
-                print "socket select exception happen:\n"
-                break
+            #try:
+            readable, writable, exceptional = select.select (self.sockets, self.sockets, [], self.timeout)
+            #except select.error:
+            #    print "socket select exception happen:\n"+select.error
+            #    break
 
             for s in readable:
                 if s is self.socket:

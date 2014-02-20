@@ -16,13 +16,18 @@ class ChannelProxy(QObject, NS.Monitor):
         self.output_queue = Queue.Queue()
         self.detector_thread  = NS.SocketClientThread(name+"_detector", (detector_ip, service_port), self.input_queue, self.output_queue)
         self.proxy_thread  = NS.ProxyThread(name+"_proxy", service_port, self.input_queue, self.output_queue, self)
+        self.startTimer = QTimer(self)
+
         self.checkTimer = QTimer(self)
         self.listener = listener
-
-    def start(self):
+	
+    def start_thread(self):
         self.detector_thread.start()
         self.proxy_thread.start()
         self.checkTimer.singleShot(2000, self.timeOut)
+		
+    def start(self):
+		self.startTimer.singleShot(5000, self.start_thread)
 
     def stop(self):
         self.detector_thread.stop()
@@ -33,6 +38,8 @@ class ChannelProxy(QObject, NS.Monitor):
             print "detector connected  "
         else:
             print "detetor not connected"
+            self.detector_thread.open()
+            self.checkTimer.singleShot(5000, self.timeOut)
         if (self.listener):
             self.listener.set_detector_connected(self.detector_thread.connected)
 
