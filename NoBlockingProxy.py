@@ -14,34 +14,27 @@ class ChannelProxy(QObject, NS.Monitor):
         super(ChannelProxy,  self).__init__(None)
         self.input_queue = Queue.Queue()
         self.output_queue = Queue.Queue()
-        self.detector_thread  = NS.SocketClientThread(name+"_detector", (detector_ip, service_port), self.input_queue, self.output_queue)
+        self.detector_thread  = NS.SocketClientThread(name+"_detector", (detector_ip, detector_port), self.input_queue, self.output_queue)
         self.proxy_thread  = NS.ProxyThread(name+"_proxy", service_port, self.input_queue, self.output_queue, self)
         self.startTimer = QTimer(self)
 
-        self.checkTimer = QTimer(self)
+ 
         self.listener = listener
 	
     def start_thread(self):
         self.detector_thread.start()
         self.proxy_thread.start()
-        self.checkTimer.singleShot(2000, self.timeOut)
+
 		
     def start(self):
 		self.startTimer.singleShot(5000, self.start_thread)
 
     def stop(self):
+        print "ChannelProxy Stop"
         self.detector_thread.stop()
         self.proxy_thread.stop()
 
-    def timeOut(self):
-        if self.detector_thread.connected:
-            print "detector connected  "
-        else:
-            print "detetor not connected"
-            self.detector_thread.open()
-            self.checkTimer.singleShot(5000, self.timeOut)
-        if (self.listener):
-            self.listener.set_detector_connected(self.detector_thread.connected)
+
 
 class ImgProxy (ChannelProxy):
     totalbytes = 0
@@ -68,6 +61,8 @@ class CmdProxy (ChannelProxy):
     def set_img_proxy (self, img_proxy):
         self.img_proxy = img_proxy
 
+    def ping(self):
+        self.detector_thread.ping()
     def pre_process_data(self, cmd):
         print "pre_process_data in"
         if "[SDR,1]" in cmd:#setup start grab status
@@ -124,24 +119,41 @@ class CmdProxy (ChannelProxy):
         if "ST,W" in cmd:
             pass
 
-class DetectorServer():
+class DetectorServer(QObject):
     def __init__(self, name, detector_ip, cmd_port, img_port, service_cmd_port, service_img_port, listener = None):
+        super(DetectorServer,  self).__init__(None)    
+        self.listener = listener
         self.cmd_proxy = CmdProxy("CmdProxy", detector_ip, cmd_port, service_cmd_port, listener)
         self.img_proxy = ImgProxy("ImgProxy", detector_ip, img_port, service_img_port, listener)
         self.cmd_proxy.set_img_proxy(self.img_proxy)
-
+        self.checkTimer = QTimer(self)
+        
     def start(self):
         self.cmd_proxy.start()
         self.img_proxy.start()
-        
+        self.connect(self.checkTimer,SIGNAL("timeout()"),self.checkConn)
+        self.checkTimer.start(10000)
     def stop(self):
+        self.checkTimer.stop()
         self.cmd_proxy.stop()
         self.img_proxy.stop()
-
+    
+    def checkConn(self):
+        if self.cmd_proxy.detector_thread.connected:
+            print "detector connected  "
+            #send command to detector
+            self.cmd_proxy.ping()
+        else:
+            print "detetor not connected"
+            self.cmd_proxy.detector_thread.open()
+            self.img_proxy.detector_thread.open()
+            #self.checkTimer.singleShot(5000, self.timeOut)
+        if (self.listener):
+            self.listener.set_detector_connected(self.cmd_proxy.detector_thread.connected)
 if __name__ == "__main__":
     #server = start_server("imgServer", "192.168.2.2", 4001, 4001)
     try:
-        server = DetectorServer("127.0.0.1", 3000, 4001, 3001,4002)
+        server = DetectorServer("Detector", "192.168.217.135", 3000, 4001, 3001,4002)
         server.start()
         while True:
             time.sleep(1)

@@ -32,7 +32,7 @@ class SocketClientThread(threading.Thread):
         self.name = name
         self.output_queue = output_queue
         self.input_queue = input_queue
-        self.timeout = 0.1
+        self.timeout = 1
         self.addr = addr
         self.daemon = True
         self.sockets = []
@@ -41,12 +41,22 @@ class SocketClientThread(threading.Thread):
         self.clearBuf = False
         self.connected = False
         self.open()
+        self.pingFlag = False
 
+            
 
-    def setMonitor(monitor):
+    def ping(self):
+        cmd = "[PI]"
+        if(self.input_queue.empty()):
+            self.pingFlag = True            
+            self.input_queue.put(cmd)                
+        
+    def setMonitor(self, monitor):
         self.monitor = monitor
 
     def open(self):
+        clearQueue(self.input_queue)
+        clearQueue(self.output_queue)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
         try:
@@ -64,31 +74,36 @@ class SocketClientThread(threading.Thread):
         return True
 
     def _close(self):
+        clearQueue(self.input_queue)
+        clearQueue(self.output_queue)
+        self.connected = False
         if not self.socket:
             return
         self.socket.close()
         #self.sockets.remove(self.socket)
         self.socket = None;
-        clearQueue(self.input_queue)
-        clearQueue(self.output_queue)
+
 
     def on_socket_readable(self, s):
         try:
             data = s.recv(4096)
             if data :
         #        print "on_detector_data_comming: received data:", data
-                self.output_queue.put(data)
+                if(self.pingFlag):
+                    self.pingFlag = False;
+                    print "get ping return" + data
+                else:
+                    self.output_queue.put(data)
                 return True
             else:
                 print "detector close the socket:\n"
+                self.connected = False
                 return False
         except socket.error, e:
             (err_no, err_msg) = e
             print "error is %s"%err_msg
             print "errornumber is %d"%err_no
-            if(err_no == 10054):
-                self.sockets.remove(s)
-                s.close()
+
             return False
 
     def on_socket_writable(self,s):
@@ -99,38 +114,51 @@ class SocketClientThread(threading.Thread):
             data = self.input_queue.get()
             try:
                 self.socket.send(data)
+                
             except socket.error, e:
                 (err_no, err_msg) = e
                 print "error is %s"%err_msg
                 print "errornumber is %d"%err_no
-                if(err_no == 10054):
-                    self.sockets.remove(s)
-                    s.close()
                 return False
-
+        return True
+        
     def run(self):
+        print "start client thread"
         while self.Alive:
             if self.clearBuf:
-                empty_socket(self.socket)
+                empty_noblocking_socket(self.socket)
                 clearQueue(self.queue)
                 self.clearBuf = False
-            #try:
-            readable, writable, exceptional = select.select (self.sockets, self.sockets, [], self.timeout)
-            #except select.error:
-            #    print "socket select exception happen:\n"+select.error
+            try:
+                readable, writable, exceptional = select.select (self.sockets, self.sockets, [], self.timeout)
+            except Exception as e:
+                print "socket select exception happen:\n"+e
+                self.sockets = []
+                self.socket.close()
+                self.connected = False
             #    break
-
-            for s in readable:
-                if s is self.socket:
-                    if not self.on_socket_readable (s):
-                        break;
-
             for s in writable:
                 if s is self.socket:
                     if not self.on_socket_writable(s):
+                        print "Client Thread Write Error "
+                        self.sockets.remove(s)
+                        s.close()
+                        self.connected = False
+                        break;
+            for s in readable:
+                if s is self.socket:
+                    if not self.on_socket_readable (s):
+                        print "Client Thread Read Error "
+                        self.sockets.remove(s)
+                        s.close()
+                        self.connected = False
+
                         break;
 
+
+
         self._close()
+        print "quit Socket Client Thread"
 
     def set_clear_flag(self):
         self.clearBuf = True
@@ -153,13 +181,14 @@ class ProxyThread (threading.Thread):
         self.timeout = 0.1
         self._open()
 
-    def setMonitor(monitor):
+    def setMonitor(self, monitor):
         self.monitor = monitor
 
     def _open(self):
         #create listener socket
         #Only allow one connection
         #When new connection come, recreate the detector connection a
+        self._close()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setblocking(False)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -169,13 +198,13 @@ class ProxyThread (threading.Thread):
         self.inputs = [self.server]
 
     def _close(self):
-        if not self.inputs:
-            return
-        for socket in self.inputs:
-            socket.close()
-            self.inputs.remove(socket)
         clearQueue(self.input_queue)
         clearQueue(self.output_queue)
+        if hasattr(self, 'inputs'):
+            for socket in self.inputs:
+                socket.close()
+                self.inputs.remove(socket)
+
 
     def on_new_client_comming(self, s):
         connection, client_addr = s.accept()
@@ -236,21 +265,24 @@ class ProxyThread (threading.Thread):
                 if s is self.server:
                     #there is new connect request
                     self.on_new_client_comming (s)
+                        
                 else:
                     #data comming from client
                     self.on_client_readable(s)
+                        #Something wrong happen 
+                                                
             for s in writable:
                 if s is not self.server:
                     self.on_client_writable(s)
 
-        print "quit process\n"
+        print "quit proxy process\n"
         for s in self.inputs:
             s.close()
 
     def run(self):
         print "detector server run\n"
         self.process()
-        print "DetectorServer q%suit" % self.name
+        print "DetectorServer proxy q%suit" % self.name
         self._close()
 
     def stop(self):

@@ -6,7 +6,7 @@ import sys, traceback
 import NoBlockingProxy as detector_server
 import SerialProxy
 from proxy_monitor import ProxyMonitor 
-import threading
+
 import reg
         
 class MonitorWindow (QDeclarativeView,  ProxyMonitor):
@@ -43,7 +43,7 @@ class MonitorWindow (QDeclarativeView,  ProxyMonitor):
 
             print event.key()
             if event.key() == Qt.Key_Escape:
-
+                server.stop()
                 self.close()
 
             elif event.key() == Qt.Key_R:
@@ -155,7 +155,7 @@ if __name__ == "__main__":
         print "star proxy failed"
         print e
         traceback.print_exc()
-    #app.exec_()
+    app.exec_()
     #if serialProxy:
     #    serialProxy.stop()
     if server:
