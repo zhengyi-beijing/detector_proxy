@@ -68,19 +68,20 @@ class CmdProxy (ChannelProxy):
         if "[SDR,1]" in cmd:#setup start grab status
             print "get detector sdr 1"
             self.listener.set_detector_running (True)
+            return False
         elif "[SDR,0]" in cmd:
             print "get detector sdr 0"
             self.listener.set_detector_running (False)
-
+            return False;    
         if "SDC" in cmd: #setup detector connection:
             if "1" in cmd:
                 self.listener.set_detector_connected(True)
-                pass
+                return False;
             elif "0" in cmd:
                 self.listener.set_detector_connected(False)
-                pass
+                return False;
         if "SDB" in cmd:  #setup battery info
-            pass
+            return False;
 
         if "SDS" in cmd:#setup detector speed
             nPos = cmd.index("SDS")
@@ -90,22 +91,22 @@ class CmdProxy (ChannelProxy):
             print speed
             self.listener.set_detector_speed(speed)
 
-            pass
+            return False;
 
         if "SSR" in cmd:#setup speaker status
             if "1" in cmd:
-                pass
+                return False;
             elif "0" in cmd:
-                pass
+                return False;
 
         if "SES" in cmd:#setup stop button status
             if "1" in cmd:
-                pass
+                return False;
             elif "0" in cmd:
-                pass
+                return False;
 
         if "STI" in cmd: #setup the display info: warning msg error etc
-            pass
+            return False;
         return True
 
     def post_process_data(self, cmd):
@@ -142,7 +143,7 @@ class DetectorServer(QObject):
         if self.cmd_proxy.detector_thread.connected:
             print "detector connected  "
             #send command to detector
-            self.cmd_proxy.ping()
+            #self.cmd_proxy.ping()
         else:
             print "detetor not connected"
             self.cmd_proxy.detector_thread.open()

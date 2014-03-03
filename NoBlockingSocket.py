@@ -132,7 +132,8 @@ class SocketClientThread(threading.Thread):
             try:
                 readable, writable, exceptional = select.select (self.sockets, self.sockets, [], self.timeout)
             except Exception as e:
-                print "socket select exception happen:\n"+e
+                print "socket select exception happen:\n"
+                print e
                 self.sockets = []
                 self.socket.close()
                 self.connected = False

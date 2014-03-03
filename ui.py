@@ -148,7 +148,7 @@ if __name__ == "__main__":
         view.show()
        # view.showFullScreen()
         serialProxy = SerialProxy.start_proxy(view)
-        server = detector_server.DetectorServer("detector", "192.168.217.135", 3000,4001,3000,4001, view)
+        server = detector_server.DetectorServer("detector", "192.168.217.135", 3000, 4001,30000,40001, view)
         server.start()
         app.exec_()
     except Exception, e:
